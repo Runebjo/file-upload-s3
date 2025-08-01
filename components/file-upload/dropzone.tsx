@@ -92,7 +92,7 @@ export function Dropzone({
         ) : (
           <Image
             className="h-12 w-12 text-muted-foreground"
-            alt="upload image"
+            aria-label="upload image"
           />
         )}
 
