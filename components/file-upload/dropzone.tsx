@@ -109,7 +109,7 @@ export function Dropzone({
                 Drag & drop images here, or click to browse
               </p>
               <p className="text-sm text-muted-foreground">
-                PNG, JPG, GIF, WebP up to 2MB each • Max{' '}
+                PNG, JPG, GIF, WebP up to 5MB each • Max{' '}
                 {DEFAULT_OPTIONS.maxFiles} files
               </p>
             </>

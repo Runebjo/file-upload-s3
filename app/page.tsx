@@ -49,7 +49,7 @@ export default function Home() {
             File Upload App
           </h1>
           <p className="text-muted-foreground">
-            Drag and drop your images or click to browse • Max 5 files, 2MB each
+            Drag and drop your images or click to browse • Max 5 files, 5MB each
           </p>
         </div>
 

@@ -10,7 +10,7 @@ export interface FileValidationOptions {
 }
 
 export const DEFAULT_OPTIONS: FileValidationOptions = {
-  maxSize: 2 * 1024 * 1024, // 2MB
+  maxSize: 5 * 1024 * 1024, // 5MB
   maxFiles: 5,
   allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
 };
