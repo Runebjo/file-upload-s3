@@ -1,7 +1,10 @@
 export interface UploadedFile {
   id: string;
   file: File;
-  preview: string;
-  name: string;
-  size: number;
+  uploading: boolean;
+  progress: number;
+  key?: string;
+  isDeleting: boolean;
+  error: boolean;
+  objectUrl?: string;
 }

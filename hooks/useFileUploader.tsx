@@ -10,38 +10,49 @@ const useFileUploader = () => {
   useEffect(() => {
     return () => {
       uploadedFiles.forEach((file) => {
-        URL.revokeObjectURL(file.preview);
+        if (file.objectUrl) {
+          URL.revokeObjectURL(file.objectUrl);
+        }
       });
     };
   }, [uploadedFiles]);
 
-  const handleFilesAccepted = useCallback((files: File[]) => {
-    const newFiles: UploadedFile[] = files.map((file) => ({
-      id: uuidv4(),
-      file,
-      preview: URL.createObjectURL(file),
-      name: file.name,
-      size: file.size,
-    }));
+  const handleUploadFiles = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length) {
+      setUploadedFiles((prevFiles) => [
+        ...prevFiles,
+        ...acceptedFiles.map((file) => ({
+          id: String(uuidv4()), // Convert ZodUUID to string
+          file,
+          uploading: false,
+          progress: 0,
+          isDeleting: false,
+          error: false,
+          objectUrl: URL.createObjectURL(file),
+        })),
+      ]);
 
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-    files.forEach(uploadFile);
+      acceptedFiles.forEach(uploadFile);
+    }
   }, []);
 
   const handleRemoveFile = useCallback((id: string) => {
     setUploadedFiles((prev) => {
       const fileToRemove = prev.find((f) => f.id === id);
-      if (fileToRemove) {
-        URL.revokeObjectURL(fileToRemove.preview);
+      if (fileToRemove && fileToRemove.objectUrl) {
+        URL.revokeObjectURL(fileToRemove.objectUrl);
       }
       return prev.filter((f) => f.id !== id);
     });
   }, []);
 
   const uploadFile = async (file: File) => {
-    console.log('uploading files', file);
+    setUploadedFiles((prevFiles) =>
+      prevFiles.map((f) => (f.file === file ? { ...f, uploading: true } : f))
+    );
 
     try {
+      // 1. Get presigned URL
       const presignedResponse = await fetch('/api/s3/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,45 +66,81 @@ const useFileUploader = () => {
       if (!presignedResponse.ok) {
         toast.error('Failed to get presigned URL');
 
+        setUploadedFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.file === file
+              ? { ...f, uploading: false, progress: 0, error: true }
+              : f
+          )
+        );
+
         return;
       }
 
       const { presignedUrl, key } = await presignedResponse.json();
 
-      console.log('presignedUrl', presignedUrl);
-      console.log('key', key);
+      // 2. Upload file to S3
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-      const uploadResponse = await fetch(presignedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            setUploadedFiles((prevFiles) =>
+              prevFiles.map((f) =>
+                f.file === file
+                  ? { ...f, progress: Math.round(percentComplete), key: key }
+                  : f
+              )
+            );
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200 || xhr.status === 204) {
+            // 3. File fully uploaded - set progress to 100
+            setUploadedFiles((prevFiles) =>
+              prevFiles.map((f) =>
+                f.file === file
+                  ? { ...f, progress: 100, uploading: false, error: false }
+                  : f
+              )
+            );
+
+            toast.success('File uploaded successfully');
+
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('Upload failed'));
+        };
+
+        xhr.open('PUT', presignedUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
       });
+    } catch {
+      toast.error('Something went wrong');
 
-      if (!uploadResponse.ok) {
-        toast.error('Failed to upload file');
-
-        return;
-      }
-
-      console.log('uploadResponse', uploadResponse);
-
-      const uploadedFile = {
-        id: uuidv4(),
-        file,
-        preview: URL.createObjectURL(file),
-        name: file.name,
-        size: file.size,
-      };
-
-      setUploadedFiles((prev) => [...prev, uploadedFile]);
-      toast.success('File uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading file', error);
+      setUploadedFiles((prevFiles) =>
+        prevFiles.map((f) =>
+          f.file === file
+            ? { ...f, uploading: false, progress: 0, error: true }
+            : f
+        )
+      );
     }
   };
-  return { uploadedFiles, handleFilesAccepted, handleRemoveFile };
+
+  return {
+    uploadedFiles,
+    handleUploadFiles,
+    handleRemoveFile,
+  };
 };
 
 export default useFileUploader;

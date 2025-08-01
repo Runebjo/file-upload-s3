@@ -5,7 +5,7 @@ import { ImageGrid } from '@/components/file-upload/image-grid';
 import useFileUploader from '@/hooks/useFileUploader';
 
 export default function Home() {
-  const { uploadedFiles, handleFilesAccepted, handleRemoveFile } =
+  const { uploadedFiles, handleUploadFiles, handleRemoveFile } =
     useFileUploader();
 
   return (
@@ -24,7 +24,7 @@ export default function Home() {
         {/* Dropzone */}
         <div className="mb-8">
           <Dropzone
-            onFilesAccepted={handleFilesAccepted}
+            onFilesAccepted={handleUploadFiles}
             currentFileCount={uploadedFiles.length}
             disabled={uploadedFiles.length >= 5}
             className="w-full"

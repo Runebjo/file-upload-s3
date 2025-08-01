@@ -15,27 +15,27 @@ export function ImageCard({ file, onRemove }: ImageCardProps) {
       <div className="aspect-square relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={file.preview}
-          alt={file.name}
+          src={file.objectUrl}
+          alt={file.file.name}
           className="w-full h-full object-cover"
         />
-        
+
         {/* Remove button */}
         <button
           onClick={() => onRemove(file.id)}
           className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-          aria-label={`Remove ${file.name}`}
+          aria-label={`Remove ${file.file.name}`}
         >
           <X className="h-4 w-4" />
         </button>
-        
+
         {/* Overlay with file info */}
         <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <p className="text-xs font-medium truncate" title={file.name}>
-            {file.name}
+          <p className="text-xs font-medium truncate" title={file.file.name}>
+            {file.file.name}
           </p>
           <p className="text-xs text-gray-300">
-            {formatFileSize(file.size)}
+            {formatFileSize(file.file.size)}
           </p>
         </div>
       </div>
