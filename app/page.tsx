@@ -1,44 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Dropzone } from '@/components/file-upload/dropzone';
 import { ImageGrid } from '@/components/file-upload/image-grid';
-import { UploadedFile } from '@/lib/types';
+import useFileUploader from '@/hooks/useFileUploader';
 
 export default function Home() {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-
-  const handleFilesAccepted = useCallback((files: File[]) => {
-    const newFiles: UploadedFile[] = files.map(file => ({
-      id: uuidv4(),
-      file,
-      preview: URL.createObjectURL(file),
-      name: file.name,
-      size: file.size
-    }));
-
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-  }, []);
-
-  const handleRemoveFile = useCallback((id: string) => {
-    setUploadedFiles(prev => {
-      const fileToRemove = prev.find(f => f.id === id);
-      if (fileToRemove) {
-        URL.revokeObjectURL(fileToRemove.preview);
-      }
-      return prev.filter(f => f.id !== id);
-    });
-  }, []);
-
-  // Cleanup object URLs on unmount
-  useEffect(() => {
-    return () => {
-      uploadedFiles.forEach(file => {
-        URL.revokeObjectURL(file.preview);
-      });
-    };
-  }, [uploadedFiles]);
+  const { uploadedFiles, handleFilesAccepted, handleRemoveFile } =
+    useFileUploader();
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,15 +32,13 @@ export default function Home() {
         </div>
 
         {/* Image Grid */}
-        <ImageGrid
-          files={uploadedFiles}
-          onRemoveFile={handleRemoveFile}
-        />
+        <ImageGrid files={uploadedFiles} onRemoveFile={handleRemoveFile} />
 
         {uploadedFiles.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
-              No images uploaded yet. Drag and drop some files above to get started!
+              No images uploaded yet. Drag and drop some files above to get
+              started!
             </p>
           </div>
         )}
