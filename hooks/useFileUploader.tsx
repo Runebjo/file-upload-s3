@@ -36,14 +36,45 @@ const useFileUploader = () => {
     }
   }, []);
 
-  const handleRemoveFile = useCallback((id: string) => {
-    setUploadedFiles((prev) => {
-      const fileToRemove = prev.find((f) => f.id === id);
-      if (fileToRemove && fileToRemove.objectUrl) {
-        URL.revokeObjectURL(fileToRemove.objectUrl);
+  const handleRemoveFile = useCallback(async (id: string) => {
+    try {
+      const fileToRemove = uploadedFiles.find((f) => f.id === id);
+      if (fileToRemove) {
+        if (fileToRemove.objectUrl) {
+          URL.revokeObjectURL(fileToRemove.objectUrl);
+        }
       }
-      return prev.filter((f) => f.id !== id);
-    });
+
+      setUploadedFiles((prevFiles) =>
+        prevFiles.map((f) => (f.id === id ? { ...f, isDeleting: true } : f))
+      );
+
+      const response = await fetch('/api/s3/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: fileToRemove?.key }),
+      });
+
+      if (!response.ok) {
+        toast.error('Failed to remove file from storage.');
+        setUploadedFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.id === id ? { ...f, isDeleting: false, error: true } : f
+          )
+        );
+        return;
+      }
+
+      setUploadedFiles((prevFiles) => prevFiles.filter((f) => f.id !== id));
+      toast.success('File removed successfully');
+    } catch (error) {
+      toast.error('Failed to remove file from storage.');
+      setUploadedFiles((prevFiles) =>
+        prevFiles.map((f) =>
+          f.id === id ? { ...f, isDeleting: false, error: true } : f
+        )
+      );
+    }
   }, []);
 
   const uploadFile = async (file: File) => {
