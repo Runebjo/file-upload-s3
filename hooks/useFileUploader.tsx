@@ -1,13 +1,14 @@
 import { UploadedFile } from '@/lib/types';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { uuidv4 } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 
 const useFileUploader = () => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   // Cleanup object URLs on unmount
   useEffect(() => {
+    console.log('uploadedFiles in useEffect', uploadedFiles);
     return () => {
       uploadedFiles.forEach((file) => {
         if (file.objectUrl) {
@@ -22,7 +23,7 @@ const useFileUploader = () => {
       setUploadedFiles((prevFiles) => [
         ...prevFiles,
         ...acceptedFiles.map((file) => ({
-          id: String(uuidv4()), // Convert ZodUUID to string
+          id: uuidv4(),
           file,
           uploading: false,
           progress: 0,
@@ -38,11 +39,21 @@ const useFileUploader = () => {
 
   const handleRemoveFile = useCallback(async (id: string) => {
     try {
+      console.log('id', id);
+      console.log('uploadedFiles', uploadedFiles);
       const fileToRemove = uploadedFiles.find((f) => f.id === id);
+      console.log('fileToRemove', fileToRemove);
       if (fileToRemove) {
         if (fileToRemove.objectUrl) {
           URL.revokeObjectURL(fileToRemove.objectUrl);
         }
+      }
+
+      // If file hasn't been uploaded to S3 yet (no key), just remove from local state
+      if (!fileToRemove?.key) {
+        setUploadedFiles((prevFiles) => prevFiles.filter((f) => f.id !== id));
+        toast.success('File removed successfully');
+        return;
       }
 
       setUploadedFiles((prevFiles) =>
@@ -52,8 +63,10 @@ const useFileUploader = () => {
       const response = await fetch('/api/s3/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: fileToRemove?.key }),
+        body: JSON.stringify({ key: fileToRemove.key }),
       });
+
+      console.log('response', response);
 
       if (!response.ok) {
         toast.error('Failed to remove file from storage.');
@@ -139,6 +152,7 @@ const useFileUploader = () => {
             );
 
             toast.success('File uploaded successfully');
+            console.log('uploadedFiles finished', uploadedFiles);
 
             resolve();
           } else {

@@ -10,6 +10,7 @@ interface ImageCardProps {
 }
 
 export function ImageCard({ file, onRemove }: ImageCardProps) {
+  console.log('file in image card', file);
   return (
     <div className="relative group bg-card border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="aspect-square relative">

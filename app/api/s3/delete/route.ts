@@ -3,7 +3,6 @@ import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { S3 } from '@/lib/s3Client';
 
 export async function DELETE(request: Request) {
-  console.log('DELETE request received');
   try {
     const body = await request.json();
     const key = body.key;
