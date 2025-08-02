@@ -88,7 +88,7 @@ const useFileUploader = () => {
         )
       );
     }
-  }, []);
+  }, [uploadedFiles]);
 
   const uploadFile = async (file: File) => {
     setUploadedFiles((prevFiles) =>
