@@ -8,7 +8,6 @@ const useFileUploader = () => {
 
   // Cleanup object URLs on unmount
   useEffect(() => {
-    console.log('uploadedFiles in useEffect', uploadedFiles);
     return () => {
       uploadedFiles.forEach((file) => {
         if (file.objectUrl) {
@@ -39,10 +38,7 @@ const useFileUploader = () => {
 
   const handleRemoveFile = useCallback(async (id: string) => {
     try {
-      console.log('id', id);
-      console.log('uploadedFiles', uploadedFiles);
       const fileToRemove = uploadedFiles.find((f) => f.id === id);
-      console.log('fileToRemove', fileToRemove);
       if (fileToRemove) {
         if (fileToRemove.objectUrl) {
           URL.revokeObjectURL(fileToRemove.objectUrl);
@@ -65,8 +61,6 @@ const useFileUploader = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: fileToRemove.key }),
       });
-
-      console.log('response', response);
 
       if (!response.ok) {
         toast.error('Failed to remove file from storage.');
@@ -152,7 +146,6 @@ const useFileUploader = () => {
             );
 
             toast.success('File uploaded successfully');
-            console.log('uploadedFiles finished', uploadedFiles);
 
             resolve();
           } else {
